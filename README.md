@@ -59,13 +59,15 @@ MongoDB
 ```text
 cmd/
 internal/
+├── app_error/
+├── auth/
+├── database/
 ├── dto/
 ├── handler/
 ├── middleware/
 ├── model/
 ├── repository/
-├── service/
-└── app_error/
+└── service/
 ```
 
 ## Como executar
