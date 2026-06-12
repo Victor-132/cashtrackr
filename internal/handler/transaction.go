@@ -26,6 +26,7 @@ func (t *TransactionHandler) Register(app *fiber.App) {
 	protected := app.Group("/v1/transactions", middleware.AuthMiddleware)
 
 	protected.Post("/", t.Create)
+	protected.Get("/", t.GetByUserId)
 }
 
 func (t *TransactionHandler) Create(ctx *fiber.Ctx) error {
@@ -56,4 +57,30 @@ func (t *TransactionHandler) Create(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.Status(fiber.StatusCreated).JSON(res)
+}
+
+func (t *TransactionHandler) GetByUserId(ctx *fiber.Ctx) error {
+	var req dto.ListTransactionsRequest
+
+	if err := ctx.QueryParser(&req); err != nil {
+		log.Println(err)
+		return err
+	}
+
+	c, cancel := context.WithTimeout(ctx.UserContext(), 5*time.Second)
+	defer cancel()
+
+	userID := ctx.Locals("user_id").(bson.ObjectID)
+
+	res, err := t.svc.GetByUserId(c, userID, req)
+	if err != nil {
+		var appError apperror.AppError
+		if errors.As(err, &appError) {
+			return ctx.Status(fiber.StatusBadRequest).SendString(err.Error())
+		}
+
+		return err
+	}
+
+	return ctx.JSON(res)
 }
