@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"log"
 	"math"
 	"time"
 
@@ -49,7 +50,7 @@ func (t *TrasnactionService) Create(ctx context.Context, userId bson.ObjectID, r
 	return &res, nil
 }
 
-func (t *TrasnactionService) GetByUserId(ctx context.Context, userId bson.ObjectID, req dto.ListTransactionsRequest) (*dto.ListTransactionsResponse, error) {
+func (t *TrasnactionService) GetByFilter(ctx context.Context, userId bson.ObjectID, req dto.ListTransactionsRequest) (*dto.ListTransactionsResponse, error) {
 	page := req.Page
 	if page <= 0 {
 		page = 1
@@ -69,7 +70,7 @@ func (t *TrasnactionService) GetByUserId(ctx context.Context, userId bson.Object
 		EndDate:   req.EndDate,
 	}
 
-	ret, err := t.repo.GetByUserId(ctx, filter)
+	ret, err := t.repo.GetByFilter(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -93,6 +94,36 @@ func (t *TrasnactionService) GetByUserId(ctx context.Context, userId bson.Object
 		Limit:      filter.Limit,
 		TotalItems: ret.TotalItems,
 		TotalPages: int(math.Ceil(float64(ret.TotalItems) / float64(filter.Limit))),
+	}
+
+	return &res, nil
+}
+
+func (t *TrasnactionService) GetById(ctx context.Context, userId bson.ObjectID, trId string) (*dto.TransactionResponse, error) {
+	id, err := bson.ObjectIDFromHex(trId)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	tr, err := t.repo.GetById(ctx, id, userId)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	if tr == nil {
+		return nil, nil
+	}
+
+	res := dto.TransactionResponse{
+		ID:              tr.ID.Hex(),
+		Title:           tr.Title,
+		Description:     tr.Description,
+		Amount:          tr.Amount,
+		Type:            string(tr.Type),
+		TransactionDate: tr.TransactionDate,
+		CreatedAt:       tr.CreatedAt,
 	}
 
 	return &res, nil

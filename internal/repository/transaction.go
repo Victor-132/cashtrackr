@@ -30,7 +30,7 @@ func (t *TransactionRepository) Create(ctx context.Context, tr model.Transaction
 	return res.InsertedID.(bson.ObjectID).Hex(), nil
 }
 
-func (t *TransactionRepository) GetByUserId(ctx context.Context, trFilter TransactionFilter) (*PaginatedTransactions, error) {
+func (t *TransactionRepository) GetByFilter(ctx context.Context, trFilter TransactionFilter) (*PaginatedTransactions, error) {
 	filter := bson.M{"user_id": trFilter.UserID}
 
 	if strings.TrimSpace(trFilter.Type) != "" {
@@ -81,6 +81,27 @@ func (t *TransactionRepository) GetByUserId(ctx context.Context, trFilter Transa
 	res := PaginatedTransactions{
 		Transactions: list,
 		TotalItems:   int(total),
+	}
+
+	return &res, nil
+}
+
+func (t *TransactionRepository) GetById(ctx context.Context, trId, userId bson.ObjectID) (*model.Transaction, error) {
+	log.Printf("id: %s\n", trId.Hex())
+	log.Printf("user: %s\n", userId.Hex())
+	filter := bson.M{
+		"_id":     trId,
+		"user_id": userId,
+	}
+
+	var res model.Transaction
+	if err := t.coll.FindOne(ctx, filter).Decode(&res); err != nil {
+		if errors.Is(err, mongo.ErrNoDocuments) {
+			return nil, nil
+		}
+
+		log.Println(err)
+		return nil, err
 	}
 
 	return &res, nil

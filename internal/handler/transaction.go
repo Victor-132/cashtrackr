@@ -26,7 +26,8 @@ func (t *TransactionHandler) Register(app *fiber.App) {
 	protected := app.Group("/v1/transactions", middleware.AuthMiddleware)
 
 	protected.Post("/", t.Create)
-	protected.Get("/", t.GetByUserId)
+	protected.Get("/", t.GetByFilter)
+	protected.Get("/:id", t.GetById)
 }
 
 func (t *TransactionHandler) Create(ctx *fiber.Ctx) error {
@@ -59,7 +60,7 @@ func (t *TransactionHandler) Create(ctx *fiber.Ctx) error {
 	return ctx.Status(fiber.StatusCreated).JSON(res)
 }
 
-func (t *TransactionHandler) GetByUserId(ctx *fiber.Ctx) error {
+func (t *TransactionHandler) GetByFilter(ctx *fiber.Ctx) error {
 	var req dto.ListTransactionsRequest
 
 	if err := ctx.QueryParser(&req); err != nil {
@@ -72,7 +73,7 @@ func (t *TransactionHandler) GetByUserId(ctx *fiber.Ctx) error {
 
 	userID := ctx.Locals("user_id").(bson.ObjectID)
 
-	res, err := t.svc.GetByUserId(c, userID, req)
+	res, err := t.svc.GetByFilter(c, userID, req)
 	if err != nil {
 		var appError apperror.AppError
 		if errors.As(err, &appError) {
@@ -80,6 +81,31 @@ func (t *TransactionHandler) GetByUserId(ctx *fiber.Ctx) error {
 		}
 
 		return err
+	}
+
+	return ctx.JSON(res)
+}
+
+func (t *TransactionHandler) GetById(ctx *fiber.Ctx) error {
+	id := ctx.Params("id")
+
+	c, cancel := context.WithTimeout(ctx.UserContext(), 5*time.Second)
+	defer cancel()
+
+	userID := ctx.Locals("user_id").(bson.ObjectID)
+
+	res, err := t.svc.GetById(c, userID, id)
+	if err != nil {
+		var appError apperror.AppError
+		if errors.As(err, &appError) {
+			return ctx.Status(fiber.StatusBadRequest).SendString(err.Error())
+		}
+
+		return err
+	}
+
+	if res == nil {
+		return ctx.SendStatus(fiber.StatusNotFound)
 	}
 
 	return ctx.JSON(res)
