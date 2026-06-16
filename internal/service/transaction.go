@@ -12,15 +12,15 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-type TrasnactionService struct {
+type TransactionService struct {
 	repo repository.TransactionRepository
 }
 
-func NewTransactionRepository(repo repository.TransactionRepository) TrasnactionService {
-	return TrasnactionService{repo}
+func NewTransactionRepository(repo repository.TransactionRepository) TransactionService {
+	return TransactionService{repo}
 }
 
-func (t *TrasnactionService) Create(ctx context.Context, userId bson.ObjectID, req dto.CreateTransactionRequest) (*dto.TransactionResponse, error) {
+func (t *TransactionService) Create(ctx context.Context, userId bson.ObjectID, req dto.CreateTransactionRequest) (*dto.TransactionResponse, error) {
 	tr := model.Transaction{
 		UserID:          userId,
 		Title:           req.Title,
@@ -45,12 +45,13 @@ func (t *TrasnactionService) Create(ctx context.Context, userId bson.ObjectID, r
 		Type:            string(tr.Type),
 		TransactionDate: tr.TransactionDate,
 		CreatedAt:       tr.CreatedAt,
+		UpdatedAt:       tr.UpdatedAt,
 	}
 
 	return &res, nil
 }
 
-func (t *TrasnactionService) GetByFilter(ctx context.Context, userId bson.ObjectID, req dto.ListTransactionsRequest) (*dto.ListTransactionsResponse, error) {
+func (t *TransactionService) GetByFilter(ctx context.Context, userId bson.ObjectID, req dto.ListTransactionsRequest) (*dto.ListTransactionsResponse, error) {
 	page := req.Page
 	if page <= 0 {
 		page = 1
@@ -85,6 +86,7 @@ func (t *TrasnactionService) GetByFilter(ctx context.Context, userId bson.Object
 			Type:            string(tr.Type),
 			TransactionDate: tr.TransactionDate,
 			CreatedAt:       tr.CreatedAt,
+			UpdatedAt:       tr.UpdatedAt,
 		})
 	}
 
@@ -99,7 +101,7 @@ func (t *TrasnactionService) GetByFilter(ctx context.Context, userId bson.Object
 	return &res, nil
 }
 
-func (t *TrasnactionService) GetById(ctx context.Context, userId bson.ObjectID, trId string) (*dto.TransactionResponse, error) {
+func (t *TransactionService) GetById(ctx context.Context, userId bson.ObjectID, trId string) (*dto.TransactionResponse, error) {
 	id, err := bson.ObjectIDFromHex(trId)
 	if err != nil {
 		log.Println(err)
@@ -124,7 +126,44 @@ func (t *TrasnactionService) GetById(ctx context.Context, userId bson.ObjectID, 
 		Type:            string(tr.Type),
 		TransactionDate: tr.TransactionDate,
 		CreatedAt:       tr.CreatedAt,
+		UpdatedAt:       tr.UpdatedAt,
 	}
 
 	return &res, nil
+}
+
+func (t *TransactionService) UpdateById(ctx context.Context, userId bson.ObjectID, trId string, req dto.UpdateTransactionRequest) (*dto.TransactionResponse, error) {
+	id, err := bson.ObjectIDFromHex(trId)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
+
+	upd := repository.TransactionUpdate{
+		Title:           req.Title,
+		Amount:          req.Amount,
+		TransactionDate: req.TransactionDate,
+	}
+
+	tr, err := t.repo.UpdateById(ctx, id, userId, upd)
+	if err != nil {
+		return nil, err
+	}
+
+	if tr == nil {
+		return nil, nil
+	}
+
+	ret := dto.TransactionResponse{
+		ID:              tr.ID.Hex(),
+		Title:           tr.Title,
+		Description:     tr.Description,
+		Amount:          tr.Amount,
+		Type:            string(tr.Type),
+		TransactionDate: tr.TransactionDate,
+		CreatedAt:       tr.CreatedAt,
+		UpdatedAt:       tr.UpdatedAt,
+	}
+
+	return &ret, nil
 }

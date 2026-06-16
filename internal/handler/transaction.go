@@ -15,10 +15,10 @@ import (
 )
 
 type TransactionHandler struct {
-	svc service.TrasnactionService
+	svc service.TransactionService
 }
 
-func NewTransactionHandler(svc service.TrasnactionService) TransactionHandler {
+func NewTransactionHandler(svc service.TransactionService) TransactionHandler {
 	return TransactionHandler{svc}
 }
 
@@ -28,6 +28,7 @@ func (t *TransactionHandler) Register(app *fiber.App) {
 	protected.Post("/", t.Create)
 	protected.Get("/", t.GetByFilter)
 	protected.Get("/:id", t.GetById)
+	protected.Patch("/:id", t.UpdateById)
 }
 
 func (t *TransactionHandler) Create(ctx *fiber.Ctx) error {
@@ -87,10 +88,10 @@ func (t *TransactionHandler) GetByFilter(ctx *fiber.Ctx) error {
 }
 
 func (t *TransactionHandler) GetById(ctx *fiber.Ctx) error {
-	id := ctx.Params("id")
-
 	c, cancel := context.WithTimeout(ctx.UserContext(), 5*time.Second)
 	defer cancel()
+
+	id := ctx.Params("id")
 
 	userID := ctx.Locals("user_id").(bson.ObjectID)
 
@@ -109,4 +110,40 @@ func (t *TransactionHandler) GetById(ctx *fiber.Ctx) error {
 	}
 
 	return ctx.JSON(res)
+}
+
+func (t *TransactionHandler) UpdateById(ctx *fiber.Ctx) error {
+	var req dto.UpdateTransactionRequest
+
+	if err := ctx.BodyParser(&req); err != nil {
+		log.Println(err)
+		return err
+	}
+
+	if err := req.Validate(); err != nil {
+		return ctx.Status(fiber.StatusBadRequest).SendString(err.Error())
+	}
+
+	c, cancel := context.WithTimeout(ctx.UserContext(), 5*time.Second)
+	defer cancel()
+
+	id := ctx.Params("id")
+
+	userID := ctx.Locals("user_id").(bson.ObjectID)
+
+	ret, err := t.svc.UpdateById(c, userID, id, req)
+	if err != nil {
+		var appError apperror.AppError
+		if errors.As(err, &appError) {
+			return ctx.Status(fiber.StatusBadRequest).SendString(err.Error())
+		}
+
+		return err
+	}
+
+	if ret == nil {
+		return ctx.SendStatus(fiber.StatusNotFound)
+	}
+
+	return nil
 }

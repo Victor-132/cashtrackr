@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/Victor-132/cashtrackr/internal/model"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -86,11 +87,9 @@ func (t *TransactionRepository) GetByFilter(ctx context.Context, trFilter Transa
 	return &res, nil
 }
 
-func (t *TransactionRepository) GetById(ctx context.Context, trId, userId bson.ObjectID) (*model.Transaction, error) {
-	log.Printf("id: %s\n", trId.Hex())
-	log.Printf("user: %s\n", userId.Hex())
+func (t *TransactionRepository) GetById(ctx context.Context, id, userId bson.ObjectID) (*model.Transaction, error) {
 	filter := bson.M{
-		"_id":     trId,
+		"_id":     id,
 		"user_id": userId,
 	}
 
@@ -105,4 +104,46 @@ func (t *TransactionRepository) GetById(ctx context.Context, trId, userId bson.O
 	}
 
 	return &res, nil
+}
+
+func (t *TransactionRepository) UpdateById(ctx context.Context, trId, userId bson.ObjectID, req TransactionUpdate) (*model.Transaction, error) {
+	filter := bson.M{
+		"_id":     trId,
+		"user_id": userId,
+	}
+
+	set := bson.M{}
+
+	changed := false
+
+	if req.Amount != nil {
+		set["amount"] = req.Amount
+		changed = true
+	}
+
+	if req.Title != nil {
+		set["title"] = req.Title
+		changed = true
+	}
+
+	if req.TransactionDate != nil {
+		set["transaction_date"] = req.TransactionDate
+		changed = true
+	}
+
+	if changed {
+		set["updated_at"] = time.Now().UTC()
+	}
+
+	upd := bson.M{"$set": set}
+
+	var ret *model.Transaction
+	if err := t.coll.FindOneAndUpdate(ctx, filter, upd).Decode(&ret); err != nil {
+		if !errors.Is(err, mongo.ErrNoDocuments) {
+			log.Println(err)
+			return nil, err
+		}
+	}
+
+	return ret, nil
 }
