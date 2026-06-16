@@ -16,7 +16,7 @@ type TransactionService struct {
 	repo repository.TransactionRepository
 }
 
-func NewTransactionRepository(repo repository.TransactionRepository) TransactionService {
+func NewTransactionService(repo repository.TransactionRepository) TransactionService {
 	return TransactionService{repo}
 }
 
