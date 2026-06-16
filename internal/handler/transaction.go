@@ -29,6 +29,7 @@ func (t *TransactionHandler) Register(app *fiber.App) {
 	protected.Get("/", t.GetByFilter)
 	protected.Get("/:id", t.GetById)
 	protected.Patch("/:id", t.UpdateById)
+	protected.Delete("/:id", t.DeleteById)
 }
 
 func (t *TransactionHandler) Create(ctx *fiber.Ctx) error {
@@ -146,4 +147,25 @@ func (t *TransactionHandler) UpdateById(ctx *fiber.Ctx) error {
 	}
 
 	return nil
+}
+
+func (t *TransactionHandler) DeleteById(ctx *fiber.Ctx) error {
+	c, cancel := context.WithTimeout(ctx.UserContext(), 5*time.Second)
+	defer cancel()
+
+	id := ctx.Params("id")
+
+	userID := ctx.Locals("user_id").(bson.ObjectID)
+
+	err := t.svc.DeleteById(c, userID, id)
+	if err != nil {
+		var appError apperror.AppError
+		if errors.As(err, &appError) {
+			return ctx.SendStatus(fiber.StatusNotFound)
+		}
+
+		return err
+	}
+
+	return ctx.SendStatus(fiber.StatusNoContent)
 }

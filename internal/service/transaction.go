@@ -167,3 +167,15 @@ func (t *TransactionService) UpdateById(ctx context.Context, userId bson.ObjectI
 
 	return &ret, nil
 }
+
+func (t *TransactionService) DeleteById(ctx context.Context, userId bson.ObjectID, trId string) error {
+	id, err := bson.ObjectIDFromHex(trId)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	err = t.repo.DeleteById(ctx, id, userId)
+
+	return err
+}

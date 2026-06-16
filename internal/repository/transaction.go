@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	apperror "github.com/Victor-132/cashtrackr/internal/app_error"
 	"github.com/Victor-132/cashtrackr/internal/model"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -93,17 +94,15 @@ func (t *TransactionRepository) GetById(ctx context.Context, id, userId bson.Obj
 		"user_id": userId,
 	}
 
-	var res model.Transaction
+	var res *model.Transaction
 	if err := t.coll.FindOne(ctx, filter).Decode(&res); err != nil {
-		if errors.Is(err, mongo.ErrNoDocuments) {
-			return nil, nil
+		if !errors.Is(err, mongo.ErrNoDocuments) {
+			log.Println(err)
+			return nil, err
 		}
-
-		log.Println(err)
-		return nil, err
 	}
 
-	return &res, nil
+	return res, nil
 }
 
 func (t *TransactionRepository) UpdateById(ctx context.Context, trId, userId bson.ObjectID, req TransactionUpdate) (*model.Transaction, error) {
@@ -146,4 +145,27 @@ func (t *TransactionRepository) UpdateById(ctx context.Context, trId, userId bso
 	}
 
 	return ret, nil
+}
+
+func (t *TransactionRepository) DeleteById(ctx context.Context, trId, userId bson.ObjectID) error {
+	filter := bson.M{
+		"_id":     trId,
+		"user_id": userId,
+	}
+
+	res, err := t.coll.DeleteOne(ctx, filter)
+	if err != nil {
+		if !errors.Is(err, mongo.ErrNoDocuments) {
+			log.Println(err)
+			return err
+		}
+	}
+
+	if res.DeletedCount == 0 {
+		err = apperror.New("transaction not found")
+		log.Println(err)
+		return err
+	}
+
+	return nil
 }
