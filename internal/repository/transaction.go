@@ -125,6 +125,10 @@ func (t *TransactionRepository) UpdateById(ctx context.Context, trId, userId bso
 		set["transaction_date"] = req.TransactionDate
 	}
 
+	if req.CategoryID != nil {
+		set["category_id"] = req.CategoryID
+	}
+
 	if len(set) > 0 {
 		set["updated_at"] = time.Now().UTC()
 	}

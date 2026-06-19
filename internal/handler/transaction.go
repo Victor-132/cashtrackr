@@ -132,7 +132,7 @@ func (t *TransactionHandler) UpdateById(ctx *fiber.Ctx) error {
 
 	userID := ctx.Locals("user_id").(bson.ObjectID)
 
-	ret, err := t.svc.UpdateById(c, userID, id, req)
+	res, err := t.svc.UpdateById(c, userID, id, req)
 	if err != nil {
 		var appError apperror.AppError
 		if errors.As(err, &appError) {
@@ -142,11 +142,11 @@ func (t *TransactionHandler) UpdateById(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	if ret == nil {
+	if res == nil {
 		return ctx.SendStatus(fiber.StatusNotFound)
 	}
 
-	return nil
+	return ctx.JSON(res)
 }
 
 func (t *TransactionHandler) DeleteById(ctx *fiber.Ctx) error {

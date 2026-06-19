@@ -12,6 +12,7 @@ type CreateTransactionRequest struct {
 	Description     string    `json:"description"`
 	Amount          int       `json:"amount"`
 	Type            string    `json:"type"`
+	CategoryID      string    `json:"category_id"`
 	TransactionDate time.Time `json:"transaction_date"`
 }
 
@@ -30,6 +31,10 @@ func (c *CreateTransactionRequest) Validate() error {
 		return apperror.New("invalid type")
 	}
 
+	if strings.TrimSpace(c.CategoryID) == "" {
+		return apperror.New("invalid category")
+	}
+
 	if c.TransactionDate.IsZero() {
 		return apperror.New("invalid date")
 	}
@@ -43,6 +48,7 @@ type TransactionResponse struct {
 	Description     string    `json:"description,omitempty"`
 	Amount          int       `json:"amount"`
 	Type            string    `json:"type"`
+	Category        string    `json:"category"`
 	TransactionDate time.Time `json:"transaction_date"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
@@ -65,12 +71,17 @@ type ListTransactionsResponse struct {
 }
 
 type UpdateTransactionRequest struct {
+	CategoryID      *string    `json:"category_id"`
 	Title           *string    `json:"title"`
 	Amount          *int       `json:"amount"`
 	TransactionDate *time.Time `json:"transaction_date"`
 }
 
 func (u *UpdateTransactionRequest) Validate() error {
+	if u.CategoryID != nil && strings.TrimSpace(*u.CategoryID) == "" {
+		return apperror.New("invalid category")
+	}
+
 	if u.Title != nil && strings.TrimSpace(*u.Title) == "" {
 		return apperror.New("invalid title")
 	}

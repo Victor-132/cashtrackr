@@ -16,6 +16,7 @@ const (
 type Transaction struct {
 	ID              bson.ObjectID   `bson:"_id,omitempty"`
 	UserID          bson.ObjectID   `bson:"user_id"`
+	CategoryID      bson.ObjectID   `bson:"category_id"`
 	Title           string          `bson:"title"`
 	Description     string          `bson:"description,omitempty"`
 	Amount          int             `bson:"amount"`
