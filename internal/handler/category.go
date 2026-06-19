@@ -156,6 +156,10 @@ func (c *CategoryHandler) DeleteById(ctx *fiber.Ctx) error {
 
 	err := c.svc.DeleteById(cwt, userID, id)
 	if err != nil {
+		if errors.Is(err, apperror.New("category is linked to one or more transaction")) {
+			return ctx.SendStatus(fiber.StatusConflict)
+		}
+
 		var appError apperror.AppError
 		if errors.As(err, &appError) {
 			return ctx.SendStatus(fiber.StatusNotFound)

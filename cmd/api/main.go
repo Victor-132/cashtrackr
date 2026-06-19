@@ -30,11 +30,12 @@ func main() {
 	authHandler.Register(app)
 
 	categoryRepo := repository.NewCategoryRepository(db.Collection("categories"))
-	categorySvc := service.NewCategoryService(categoryRepo)
+	transactionRepo := repository.NewTransactionRepository(db.Collection("transactions"))
+
+	categorySvc := service.NewCategoryService(categoryRepo, transactionRepo)
 	categoryHandler := handler.NewCategoryHandler(categorySvc)
 	categoryHandler.Register(app)
 
-	transactionRepo := repository.NewTransactionRepository(db.Collection("transactions"))
 	transactionSvc := service.NewTransactionService(transactionRepo, categoryRepo)
 	transactionHandler := handler.NewTransactionHandler(transactionSvc)
 	transactionHandler.Register(app)

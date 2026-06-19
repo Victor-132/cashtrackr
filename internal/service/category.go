@@ -15,17 +15,18 @@ import (
 )
 
 type CategoryService struct {
-	repo repository.CategoryRepository
+	categoryRepo    repository.CategoryRepository
+	transactionRepo repository.TransactionRepository
 }
 
-func NewCategoryService(repo repository.CategoryRepository) CategoryService {
-	return CategoryService{repo}
+func NewCategoryService(categoryRepo repository.CategoryRepository, transactionRepository repository.TransactionRepository) CategoryService {
+	return CategoryService{categoryRepo, transactionRepository}
 }
 
 func (c *CategoryService) Create(ctx context.Context, userId bson.ObjectID, req dto.CreateCategoryRequest) (*dto.CategoryResponse, error) {
 	normalizedName := normalize.CategoryName(req.Name)
 
-	exists, err := c.repo.GetByNormalizedName(ctx, userId, normalizedName)
+	exists, err := c.categoryRepo.GetByNormalizedName(ctx, userId, normalizedName)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +45,7 @@ func (c *CategoryService) Create(ctx context.Context, userId bson.ObjectID, req 
 		UpdatedAt:      time.Now().UTC(),
 	}
 
-	ctId, err := c.repo.Create(ctx, ct)
+	ctId, err := c.categoryRepo.Create(ctx, ct)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +77,7 @@ func (c *CategoryService) GetByFilter(ctx context.Context, userId bson.ObjectID,
 		Limit:  limit,
 	}
 
-	ret, err := c.repo.GetByFilter(ctx, filter)
+	ret, err := c.categoryRepo.GetByFilter(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +114,7 @@ func (c *CategoryService) UpdateById(ctx context.Context, userId bson.ObjectID, 
 
 	if req.Name != nil {
 		normalizedName = normalize.CategoryName(*req.Name)
-		exists, err := c.repo.GetByNormalizedName(ctx, userId, normalizedName)
+		exists, err := c.categoryRepo.GetByNormalizedName(ctx, userId, normalizedName)
 		if err != nil {
 			return nil, err
 		}
@@ -130,7 +131,7 @@ func (c *CategoryService) UpdateById(ctx context.Context, userId bson.ObjectID, 
 		NormalizedName: normalizedName,
 	}
 
-	ct, err := c.repo.UpdateById(ctx, id, userId, up)
+	ct, err := c.categoryRepo.UpdateById(ctx, id, userId, up)
 	if err != nil {
 		return nil, err
 	}
@@ -156,7 +157,7 @@ func (c *CategoryService) GetById(ctx context.Context, userId bson.ObjectID, cat
 		return nil, err
 	}
 
-	ret, err := c.repo.GetById(ctx, id, userId)
+	ret, err := c.categoryRepo.GetById(ctx, id, userId)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +183,30 @@ func (c *CategoryService) DeleteById(ctx context.Context, userId bson.ObjectID, 
 		return err
 	}
 
-	if err := c.repo.DeleteById(ctx, id, userId); err != nil {
+	ct, err := c.categoryRepo.GetById(ctx, id, userId)
+	if err != nil {
+		return err
+	}
+
+	if ct == nil {
+		err = apperror.New("category not found")
+		log.Println(err)
+		return err
+	}
+
+	filter := repository.TransactionFilter{UserID: userId, CategoryID: &ct.ID}
+	res, err := c.transactionRepo.GetByFilter(ctx, filter)
+	if err != nil {
+		return err
+	}
+
+	if res.TotalItems > 0 {
+		err = apperror.New("category is linked to one or more transaction")
+		log.Println(err)
+		return err
+	}
+
+	if err := c.categoryRepo.DeleteById(ctx, id, userId); err != nil {
 		return err
 	}
 

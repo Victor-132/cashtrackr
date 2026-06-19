@@ -7,12 +7,13 @@ import (
 )
 
 type TransactionFilter struct {
-	UserID    bson.ObjectID
-	Page      int
-	Limit     int
-	Type      string
-	StartDate *time.Time
-	EndDate   *time.Time
+	UserID     bson.ObjectID
+	Page       int
+	Limit      int
+	Type       string
+	CategoryID *bson.ObjectID
+	StartDate  *time.Time
+	EndDate    *time.Time
 }
 
 type CategoryFilter struct {

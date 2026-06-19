@@ -53,6 +53,10 @@ func (t *TransactionRepository) GetByFilter(ctx context.Context, trFilter Transa
 		filter["transaction_date"] = dateFilter
 	}
 
+	if trFilter.CategoryID != nil {
+		filter["category_id"] = trFilter.CategoryID
+	}
+
 	skip := (trFilter.Page - 1) * trFilter.Limit
 
 	opt := options.Find().
