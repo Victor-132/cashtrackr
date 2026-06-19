@@ -13,7 +13,7 @@ import (
 func main() {
 	app := fiber.New()
 
-	db, err := database.ConnectMongo("cashtrackr_dev")
+	db, err := database.ConnectMongo()
 	if err != nil {
 		log.Fatal(err)
 	}

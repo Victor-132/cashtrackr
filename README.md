@@ -106,7 +106,7 @@ MONGODB_URI=mongodb://localhost:27017
 DATABASE_NAME=cashtrackr_dev
 
 JWT_SECRET=your-secret
-JWT_EXPIRATION=24h
+JWT_EXPIRATION=10 // tempo em minutos
 ```
 
 ### Executar
