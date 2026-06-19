@@ -27,6 +27,18 @@ O objetivo do projeto é servir como estudo e demonstração de boas práticas d
 ### Transações
 
 - Criar transação
+- Consultar transação por id
+- Consultar transações paginadas por filtro
+- Atualizar transação
+- Apagar transação
+
+### Categorias
+
+- Criar categoria
+- Consultar categoria por id
+- Consultar categorias paginadas por filtro
+- Atualizar categoria
+- Apagar categoria
 
 ## Decisões técnicas
 
@@ -109,11 +121,11 @@ go run cmd/api/main.go
 - [x] Login JWT
 - [x] Alteração de senha
 - [x] Criação de transações
-- [ ] Listagem de transações
-- [ ] Atualização de transações
-- [ ] Exclusão de transações
-- [ ] Paginação
-- [ ] Categorias
+- [x] Listagem de transações
+- [x] Atualização de transações
+- [x] Exclusão de transações
+- [x] Paginação
+- [x] Categorias
 - [ ] Relatórios
 - [ ] Redis
 - [ ] NATS

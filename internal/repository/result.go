@@ -6,3 +6,8 @@ type PaginatedTransactions struct {
 	Transactions []model.Transaction
 	TotalItems   int
 }
+
+type PaginatedCategories struct {
+	Categories []model.Category
+	TotalItems int
+}

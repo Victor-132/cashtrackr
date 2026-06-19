@@ -113,31 +113,28 @@ func (t *TransactionRepository) UpdateById(ctx context.Context, trId, userId bso
 
 	set := bson.M{}
 
-	changed := false
-
 	if req.Amount != nil {
 		set["amount"] = req.Amount
-		changed = true
 	}
 
 	if req.Title != nil {
 		set["title"] = req.Title
-		changed = true
 	}
 
 	if req.TransactionDate != nil {
 		set["transaction_date"] = req.TransactionDate
-		changed = true
 	}
 
-	if changed {
+	if len(set) > 0 {
 		set["updated_at"] = time.Now().UTC()
 	}
 
 	upd := bson.M{"$set": set}
 
+	opt := options.FindOneAndUpdate().SetReturnDocument(options.After)
+
 	var ret *model.Transaction
-	if err := t.coll.FindOneAndUpdate(ctx, filter, upd).Decode(&ret); err != nil {
+	if err := t.coll.FindOneAndUpdate(ctx, filter, upd, opt).Decode(&ret); err != nil {
 		if !errors.Is(err, mongo.ErrNoDocuments) {
 			log.Println(err)
 			return nil, err

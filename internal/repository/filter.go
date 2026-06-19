@@ -14,3 +14,9 @@ type TransactionFilter struct {
 	StartDate *time.Time
 	EndDate   *time.Time
 }
+
+type CategoryFilter struct {
+	UserID bson.ObjectID
+	Page   int
+	Limit  int
+}

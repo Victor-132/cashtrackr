@@ -7,3 +7,8 @@ type TransactionUpdate struct {
 	Amount          *int
 	TransactionDate *time.Time
 }
+
+type CategoryUpdate struct {
+	Name           *string
+	NormalizedName string
+}
