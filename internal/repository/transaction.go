@@ -14,15 +14,23 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
-type TransactionRepository struct {
+type TransactionRepository interface {
+	Create(ctx context.Context, tr model.Transaction) (string, error)
+	GetByFilter(ctx context.Context, trFilter TransactionFilter) (*PaginatedTransactions, error)
+	GetById(ctx context.Context, id, userId bson.ObjectID) (*model.Transaction, error)
+	UpdateById(ctx context.Context, trId, userId bson.ObjectID, req TransactionUpdate) (*model.Transaction, error)
+	DeleteById(ctx context.Context, trId, userId bson.ObjectID) error
+}
+
+type Transaction struct {
 	coll *mongo.Collection
 }
 
 func NewTransactionRepository(coll *mongo.Collection) TransactionRepository {
-	return TransactionRepository{coll}
+	return &Transaction{coll}
 }
 
-func (t *TransactionRepository) Create(ctx context.Context, tr model.Transaction) (string, error) {
+func (t *Transaction) Create(ctx context.Context, tr model.Transaction) (string, error) {
 	res, err := t.coll.InsertOne(ctx, tr)
 	if err != nil {
 		log.Println(err)
@@ -32,7 +40,7 @@ func (t *TransactionRepository) Create(ctx context.Context, tr model.Transaction
 	return res.InsertedID.(bson.ObjectID).Hex(), nil
 }
 
-func (t *TransactionRepository) GetByFilter(ctx context.Context, trFilter TransactionFilter) (*PaginatedTransactions, error) {
+func (t *Transaction) GetByFilter(ctx context.Context, trFilter TransactionFilter) (*PaginatedTransactions, error) {
 	filter := bson.M{"user_id": trFilter.UserID}
 
 	if strings.TrimSpace(trFilter.Type) != "" {
@@ -92,7 +100,7 @@ func (t *TransactionRepository) GetByFilter(ctx context.Context, trFilter Transa
 	return &res, nil
 }
 
-func (t *TransactionRepository) GetById(ctx context.Context, id, userId bson.ObjectID) (*model.Transaction, error) {
+func (t *Transaction) GetById(ctx context.Context, id, userId bson.ObjectID) (*model.Transaction, error) {
 	filter := bson.M{
 		"_id":     id,
 		"user_id": userId,
@@ -109,7 +117,7 @@ func (t *TransactionRepository) GetById(ctx context.Context, id, userId bson.Obj
 	return res, nil
 }
 
-func (t *TransactionRepository) UpdateById(ctx context.Context, trId, userId bson.ObjectID, req TransactionUpdate) (*model.Transaction, error) {
+func (t *Transaction) UpdateById(ctx context.Context, trId, userId bson.ObjectID, req TransactionUpdate) (*model.Transaction, error) {
 	filter := bson.M{
 		"_id":     trId,
 		"user_id": userId,
@@ -152,7 +160,7 @@ func (t *TransactionRepository) UpdateById(ctx context.Context, trId, userId bso
 	return ret, nil
 }
 
-func (t *TransactionRepository) DeleteById(ctx context.Context, trId, userId bson.ObjectID) error {
+func (t *Transaction) DeleteById(ctx context.Context, trId, userId bson.ObjectID) error {
 	filter := bson.M{
 		"_id":     trId,
 		"user_id": userId,

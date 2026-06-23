@@ -14,16 +14,24 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-type CategoryService struct {
+type CategoryService interface {
+	Create(ctx context.Context, userId bson.ObjectID, req dto.CreateCategoryRequest) (*dto.CategoryResponse, error)
+	GetByFilter(ctx context.Context, userId bson.ObjectID, req dto.ListCategoriesRequest) (*dto.ListCategoriesResponse, error)
+	UpdateById(ctx context.Context, userId bson.ObjectID, categoryId string, req dto.UpdateCategoryRequest) (*dto.CategoryResponse, error)
+	GetById(ctx context.Context, userId bson.ObjectID, categoryId string) (*dto.CategoryResponse, error)
+	DeleteById(ctx context.Context, userId bson.ObjectID, categoryId string) error
+}
+
+type Category struct {
 	categoryRepo    repository.CategoryRepository
 	transactionRepo repository.TransactionRepository
 }
 
 func NewCategoryService(categoryRepo repository.CategoryRepository, transactionRepository repository.TransactionRepository) CategoryService {
-	return CategoryService{categoryRepo, transactionRepository}
+	return &Category{categoryRepo, transactionRepository}
 }
 
-func (c *CategoryService) Create(ctx context.Context, userId bson.ObjectID, req dto.CreateCategoryRequest) (*dto.CategoryResponse, error) {
+func (c *Category) Create(ctx context.Context, userId bson.ObjectID, req dto.CreateCategoryRequest) (*dto.CategoryResponse, error) {
 	normalizedName := normalize.CategoryName(req.Name)
 
 	exists, err := c.categoryRepo.GetByNormalizedName(ctx, userId, normalizedName)
@@ -60,7 +68,7 @@ func (c *CategoryService) Create(ctx context.Context, userId bson.ObjectID, req 
 	return &res, nil
 }
 
-func (c *CategoryService) GetByFilter(ctx context.Context, userId bson.ObjectID, req dto.ListCategoriesRequest) (*dto.ListCategoriesResponse, error) {
+func (c *Category) GetByFilter(ctx context.Context, userId bson.ObjectID, req dto.ListCategoriesRequest) (*dto.ListCategoriesResponse, error) {
 	page := req.Page
 	if page <= 0 {
 		page = 1
@@ -103,7 +111,7 @@ func (c *CategoryService) GetByFilter(ctx context.Context, userId bson.ObjectID,
 	return &res, nil
 }
 
-func (c *CategoryService) UpdateById(ctx context.Context, userId bson.ObjectID, categoryId string, req dto.UpdateCategoryRequest) (*dto.CategoryResponse, error) {
+func (c *Category) UpdateById(ctx context.Context, userId bson.ObjectID, categoryId string, req dto.UpdateCategoryRequest) (*dto.CategoryResponse, error) {
 	id, err := bson.ObjectIDFromHex(categoryId)
 	if err != nil {
 		log.Println(err)
@@ -150,7 +158,7 @@ func (c *CategoryService) UpdateById(ctx context.Context, userId bson.ObjectID, 
 	return &res, nil
 }
 
-func (c *CategoryService) GetById(ctx context.Context, userId bson.ObjectID, categoryId string) (*dto.CategoryResponse, error) {
+func (c *Category) GetById(ctx context.Context, userId bson.ObjectID, categoryId string) (*dto.CategoryResponse, error) {
 	id, err := bson.ObjectIDFromHex(categoryId)
 	if err != nil {
 		log.Println(err)
@@ -176,7 +184,7 @@ func (c *CategoryService) GetById(ctx context.Context, userId bson.ObjectID, cat
 	return &res, nil
 }
 
-func (c *CategoryService) DeleteById(ctx context.Context, userId bson.ObjectID, categoryId string) error {
+func (c *Category) DeleteById(ctx context.Context, userId bson.ObjectID, categoryId string) error {
 	id, err := bson.ObjectIDFromHex(categoryId)
 	if err != nil {
 		log.Println(err)

@@ -14,15 +14,24 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
-type CategoryRepository struct {
+type CategoryRepository interface {
+	Create(ctx context.Context, ct model.Category) (string, error)
+	GetByNormalizedName(ctx context.Context, userId bson.ObjectID, name string) (*model.Category, error)
+	GetByFilter(ctx context.Context, cf CategoryFilter) (*PaginatedCategories, error)
+	UpdateById(ctx context.Context, id, userId bson.ObjectID, req CategoryUpdate) (*model.Category, error)
+	GetById(ctx context.Context, id, userId bson.ObjectID) (*model.Category, error)
+	DeleteById(ctx context.Context, id, userId bson.ObjectID) error
+}
+
+type Category struct {
 	coll *mongo.Collection
 }
 
 func NewCategoryRepository(coll *mongo.Collection) CategoryRepository {
-	return CategoryRepository{coll}
+	return &Category{coll}
 }
 
-func (c *CategoryRepository) Create(ctx context.Context, ct model.Category) (string, error) {
+func (c *Category) Create(ctx context.Context, ct model.Category) (string, error) {
 	res, err := c.coll.InsertOne(ctx, ct)
 	if err != nil {
 		log.Println(err)
@@ -32,7 +41,7 @@ func (c *CategoryRepository) Create(ctx context.Context, ct model.Category) (str
 	return res.InsertedID.(bson.ObjectID).Hex(), nil
 }
 
-func (c *CategoryRepository) GetByNormalizedName(ctx context.Context, userId bson.ObjectID, name string) (*model.Category, error) {
+func (c *Category) GetByNormalizedName(ctx context.Context, userId bson.ObjectID, name string) (*model.Category, error) {
 	filter := bson.M{
 		"user_id":         userId,
 		"normalized_name": name,
@@ -49,7 +58,7 @@ func (c *CategoryRepository) GetByNormalizedName(ctx context.Context, userId bso
 	return ret, nil
 }
 
-func (c *CategoryRepository) GetByFilter(ctx context.Context, cf CategoryFilter) (*PaginatedCategories, error) {
+func (c *Category) GetByFilter(ctx context.Context, cf CategoryFilter) (*PaginatedCategories, error) {
 	filter := bson.M{"user_id": cf.UserID}
 
 	skip := (cf.Page - 1) * cf.Limit
@@ -87,7 +96,7 @@ func (c *CategoryRepository) GetByFilter(ctx context.Context, cf CategoryFilter)
 	return &res, nil
 }
 
-func (c *CategoryRepository) UpdateById(ctx context.Context, id, userId bson.ObjectID, req CategoryUpdate) (*model.Category, error) {
+func (c *Category) UpdateById(ctx context.Context, id, userId bson.ObjectID, req CategoryUpdate) (*model.Category, error) {
 	filter := bson.M{
 		"_id":     id,
 		"user_id": userId,
@@ -118,7 +127,7 @@ func (c *CategoryRepository) UpdateById(ctx context.Context, id, userId bson.Obj
 	return ret, nil
 }
 
-func (c *CategoryRepository) GetById(ctx context.Context, id, userId bson.ObjectID) (*model.Category, error) {
+func (c *Category) GetById(ctx context.Context, id, userId bson.ObjectID) (*model.Category, error) {
 	filter := bson.M{
 		"_id":     id,
 		"user_id": userId,
@@ -135,7 +144,7 @@ func (c *CategoryRepository) GetById(ctx context.Context, id, userId bson.Object
 	return ret, nil
 }
 
-func (c *CategoryRepository) DeleteById(ctx context.Context, id, userId bson.ObjectID) error {
+func (c *Category) DeleteById(ctx context.Context, id, userId bson.ObjectID) error {
 	filter := bson.M{
 		"_id":     id,
 		"user_id": userId,

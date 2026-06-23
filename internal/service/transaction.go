@@ -13,16 +13,24 @@ import (
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
-type TransactionService struct {
+type TransactionService interface {
+	Create(ctx context.Context, userId bson.ObjectID, req dto.CreateTransactionRequest) (*dto.TransactionResponse, error)
+	GetByFilter(ctx context.Context, userId bson.ObjectID, req dto.ListTransactionsRequest) (*dto.ListTransactionsResponse, error)
+	GetById(ctx context.Context, userId bson.ObjectID, trId string) (*dto.TransactionResponse, error)
+	UpdateById(ctx context.Context, userId bson.ObjectID, trId string, req dto.UpdateTransactionRequest) (*dto.TransactionResponse, error)
+	DeleteById(ctx context.Context, userId bson.ObjectID, trId string) error
+}
+
+type Transaction struct {
 	transactionRepo repository.TransactionRepository
 	categoryRepo    repository.CategoryRepository
 }
 
 func NewTransactionService(transactionRepo repository.TransactionRepository, categoryRepo repository.CategoryRepository) TransactionService {
-	return TransactionService{transactionRepo, categoryRepo}
+	return &Transaction{transactionRepo, categoryRepo}
 }
 
-func (t *TransactionService) Create(ctx context.Context, userId bson.ObjectID, req dto.CreateTransactionRequest) (*dto.TransactionResponse, error) {
+func (t *Transaction) Create(ctx context.Context, userId bson.ObjectID, req dto.CreateTransactionRequest) (*dto.TransactionResponse, error) {
 	ctID, err := bson.ObjectIDFromHex(req.CategoryID)
 	if err != nil {
 		log.Println(err)
@@ -72,7 +80,7 @@ func (t *TransactionService) Create(ctx context.Context, userId bson.ObjectID, r
 	return &res, nil
 }
 
-func (t *TransactionService) GetByFilter(ctx context.Context, userId bson.ObjectID, req dto.ListTransactionsRequest) (*dto.ListTransactionsResponse, error) {
+func (t *Transaction) GetByFilter(ctx context.Context, userId bson.ObjectID, req dto.ListTransactionsRequest) (*dto.ListTransactionsResponse, error) {
 	page := req.Page
 	if page <= 0 {
 		page = 1
@@ -128,7 +136,7 @@ func (t *TransactionService) GetByFilter(ctx context.Context, userId bson.Object
 	return &res, nil
 }
 
-func (t *TransactionService) GetById(ctx context.Context, userId bson.ObjectID, trId string) (*dto.TransactionResponse, error) {
+func (t *Transaction) GetById(ctx context.Context, userId bson.ObjectID, trId string) (*dto.TransactionResponse, error) {
 	id, err := bson.ObjectIDFromHex(trId)
 	if err != nil {
 		log.Println(err)
@@ -165,7 +173,7 @@ func (t *TransactionService) GetById(ctx context.Context, userId bson.ObjectID, 
 	return &res, nil
 }
 
-func (t *TransactionService) UpdateById(ctx context.Context, userId bson.ObjectID, trId string, req dto.UpdateTransactionRequest) (*dto.TransactionResponse, error) {
+func (t *Transaction) UpdateById(ctx context.Context, userId bson.ObjectID, trId string, req dto.UpdateTransactionRequest) (*dto.TransactionResponse, error) {
 	var ct *model.Category
 	if req.CategoryID != nil {
 		categoryId, err := bson.ObjectIDFromHex(*req.CategoryID)
@@ -225,7 +233,7 @@ func (t *TransactionService) UpdateById(ctx context.Context, userId bson.ObjectI
 	return &ret, nil
 }
 
-func (t *TransactionService) DeleteById(ctx context.Context, userId bson.ObjectID, trId string) error {
+func (t *Transaction) DeleteById(ctx context.Context, userId bson.ObjectID, trId string) error {
 	id, err := bson.ObjectIDFromHex(trId)
 	if err != nil {
 		log.Println(err)
