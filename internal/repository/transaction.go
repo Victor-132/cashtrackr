@@ -77,6 +77,7 @@ func (t *Transaction) GetByFilter(ctx context.Context, trFilter TransactionFilte
 		log.Println(err)
 		return nil, err
 	}
+	defer cur.Close(ctx)
 
 	var list []model.Transaction
 	if err := cur.All(ctx, &list); err != nil {

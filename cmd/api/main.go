@@ -8,6 +8,10 @@ import (
 	"github.com/Victor-132/cashtrackr/internal/repository"
 	"github.com/Victor-132/cashtrackr/internal/service"
 	"github.com/gofiber/fiber/v2"
+
+	reportsHandler "github.com/Victor-132/cashtrackr/internal/reports/handler"
+	reportsRepo "github.com/Victor-132/cashtrackr/internal/reports/repository"
+	reportsSvc "github.com/Victor-132/cashtrackr/internal/reports/service"
 )
 
 func main() {
@@ -39,6 +43,11 @@ func main() {
 	transactionSvc := service.NewTransactionService(transactionRepo, categoryRepo)
 	transactionHandler := handler.NewTransactionHandler(transactionSvc)
 	transactionHandler.Register(app)
+
+	reportsTrRepo := reportsRepo.NewTransactionRepository(db.Collection("transactions"))
+	reportsTrSvc := reportsSvc.NewTransactionService(reportsTrRepo)
+	reportsTrHandler := reportsHandler.NewTransactionHandler(reportsTrSvc)
+	reportsTrHandler.Register(app)
 
 	app.Listen(":3000")
 }

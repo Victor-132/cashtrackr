@@ -73,6 +73,7 @@ func (c *Category) GetByFilter(ctx context.Context, cf CategoryFilter) (*Paginat
 		log.Println(err)
 		return nil, err
 	}
+	defer cur.Close(ctx)
 
 	var list []model.Category
 	if err := cur.All(ctx, &list); err != nil {

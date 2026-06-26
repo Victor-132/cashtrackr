@@ -1,133 +1,317 @@
 # CashTrackr
 
-API REST para gerenciamento de finanças pessoais desenvolvida em Go.
+CashTrackr é uma API REST desenvolvida em Go para gerenciamento de finanças pessoais.
 
-O objetivo do projeto é servir como estudo e demonstração de boas práticas de desenvolvimento backend, incluindo autenticação, arquitetura em camadas, persistência de dados, mensageria, cache e observabilidade.
+O objetivo do projeto é servir como um estudo aprofundado de desenvolvimento backend utilizando Go, MongoDB e arquitetura em camadas, implementando boas práticas de organização, autenticação, testes e agregações de dados.
+
+---
 
 ## Tecnologias
 
-- Go
-- Fiber
-- MongoDB
-- JWT
-- Docker (em desenvolvimento)
-- Redis (planejado)
-- NATS (planejado)
+* Go
+* Fiber
+* MongoDB
+* JWT
+* bcrypt
+* Testify
+* Docker (ambiente de desenvolvimento)
 
-## Funcionalidades
-
-### Usuários
-
-- Criar usuário
-- Login
-- Consultar usuário autenticado
-- Alterar nome
-- Alterar senha
-
-### Transações
-
-- Criar transação
-- Consultar transação por id
-- Consultar transações paginadas por filtro
-- Atualizar transação
-- Apagar transação
-
-### Categorias
-
-- Criar categoria
-- Consultar categoria por id
-- Consultar categorias paginadas por filtro
-- Atualizar categoria
-- Apagar categoria
-
-## Decisões técnicas
-
-### Valores monetários
-
-Os valores financeiros são armazenados como `int64`, representando centavos, para evitar problemas de precisão associados ao uso de `float`.
+---
 
 ## Arquitetura
 
 O projeto segue uma arquitetura em camadas:
 
-```text
+```
+HTTP
+   │
 Handler
-  ↓
+   │
 Service
-  ↓
+   │
 Repository
-  ↓
+   │
 MongoDB
 ```
 
-### Responsabilidades
+Cada camada possui responsabilidades bem definidas:
 
-- Handler: HTTP, requests e responses
-- Service: regras de negócio
-- Repository: persistência de dados
+### Handler
 
-## Estrutura de pastas
+Responsável por:
 
-```text
-cmd/
+* Receber requisições HTTP
+* Validar parâmetros e corpo da requisição
+* Traduzir erros para códigos HTTP
+* Chamar os serviços
+
+### Service
+
+Responsável pelas regras de negócio:
+
+* Validações
+* Fluxo da aplicação
+* Comunicação entre repositórios
+
+### Repository
+
+Responsável pelo acesso aos dados:
+
+* Consultas
+* Inserções
+* Atualizações
+* Exclusões
+* Aggregation Pipelines
+
+---
+
+# Funcionalidades
+
+## Usuários
+
+* Cadastro
+* Login
+* Alteração do nome
+* Alteração da senha
+* Autenticação via JWT
+
+---
+
+## Categorias
+
+* Cadastro
+* Listagem
+* Busca por ID
+* Atualização
+* Exclusão
+* Validação de nomes duplicados
+* Proteção contra exclusão de categorias vinculadas a transações
+
+---
+
+## Transações
+
+* Cadastro
+* Listagem
+* Busca por ID
+* Atualização
+* Exclusão
+* Associação com categorias
+* Valores monetários armazenados em centavos para evitar problemas de precisão
+
+---
+
+## Relatórios
+
+### Resumo mensal
+
+Retorna:
+
+* Total de receitas
+* Total de despesas
+* Saldo do mês
+
+---
+
+### Gastos por categoria
+
+Retorna:
+
+* Total gasto por categoria
+* Ordenação do maior para o menor gasto
+
+---
+
+### Evolução mensal
+
+Retorna:
+
+* Receitas por mês
+* Despesas por mês
+* Saldo mensal
+
+---
+
+# Estrutura do projeto
+
+```
 internal/
-├── app_error/
-├── auth/
-├── database/
+├── config/
 ├── dto/
 ├── handler/
 ├── middleware/
 ├── model/
 ├── repository/
-└── service/
+├── routes/
+├── service/
+├── utils/
 ```
 
-## Como executar
+---
 
-### Pré-requisitos
+# Autenticação
 
-- Go 1.24+
-- MongoDB
+A API utiliza JWT.
 
-### Instalação
+Após realizar o login, as rotas protegidas devem receber o token no header:
+
+```
+Authorization: Bearer <token>
+```
+
+---
+
+# Persistência
+
+Banco de dados:
+
+* MongoDB
+
+Coleções:
+
+* users
+* categories
+* transactions
+
+---
+
+# Modelagem
+
+## User
+
+```
+id
+name
+email
+password_hash
+created_at
+updated_at
+```
+
+---
+
+## Category
+
+```
+id
+user_id
+name
+normalized_name
+created_at
+updated_at
+```
+
+---
+
+## Transaction
+
+```
+id
+user_id
+category_id
+title
+description
+type
+amount
+transaction_date
+created_at
+updated_at
+```
+
+O campo `amount` é armazenado em centavos (`int64`) para evitar problemas de precisão com números de ponto flutuante.
+
+---
+
+# Testes
+
+O projeto possui testes unitários para a camada de serviços.
+
+Cenários cobertos incluem:
+
+* Criação de transações
+* Validação de categorias
+* Tratamento de erros de repositório
+* CRUD de categorias
+
+Os testes utilizam mocks para isolamento das dependências.
+
+---
+
+# Executando o projeto
+
+## Clonar
 
 ```bash
-git clone https://github.com/seu-usuario/cashtrackr.git
+git clone https://github.com/<seu-usuario>/cashtrackr.git
+```
 
-cd cashtrackr
+## Instalar dependências
 
+```bash
 go mod download
 ```
 
-### Variáveis de ambiente
+## Configurar variáveis de ambiente
 
-```env
-MONGODB_URI=mongodb://localhost:27017
-DATABASE_NAME=cashtrackr_dev
+Exemplo:
 
-JWT_SECRET=your-secret
-JWT_EXPIRATION=10 // tempo em minutos
+```
+MONGO_URI=
+DATABASE_NAME=
+JWT_SECRET=
 ```
 
-### Executar
+## Executar
 
 ```bash
 go run cmd/api/main.go
 ```
 
-## Próximos passos
+---
 
-- [x] Cadastro de usuários
-- [x] Login JWT
-- [x] Alteração de senha
-- [x] Criação de transações
-- [x] Listagem de transações
-- [x] Atualização de transações
-- [x] Exclusão de transações
-- [x] Paginação
-- [x] Categorias
-- [ ] Relatórios
-- [ ] Redis
-- [ ] NATS
-- [ ] Docker
-- [ ] Testes automatizados
+# Executando os testes
+
+Todos os testes:
+
+```bash
+go test ./...
+```
+
+Cobertura:
+
+```bash
+go test ./... -cover
+```
+
+Relatório HTML:
+
+```bash
+go test ./... -coverprofile=coverage.out
+go tool cover -html=coverage.out
+```
+
+---
+
+# Próximas funcionalidades
+
+* Contas bancárias
+* Orçamentos mensais
+* Dashboard consolidado
+* Relatórios avançados
+* Documentação OpenAPI/Swagger
+* Testes de integração
+
+---
+
+# Objetivo do projeto
+
+Este projeto foi desenvolvido como estudo de backend com foco em:
+
+* Arquitetura em camadas
+* Boas práticas em Go
+* MongoDB
+* APIs REST
+* Testes
+* Autenticação
+* Aggregation Pipeline
+* Organização e escalabilidade de código
